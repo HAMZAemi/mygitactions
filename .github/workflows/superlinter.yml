@@ -1,17 +1,29 @@
-name: Super-Linter
+name: CI/CD Pipeline
 
-on: push
+on:
+  push:
+    paths:
+      - 'index.html'
 
 jobs:
-  super-lint:
-    name: Lint code base
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Run Super-Linter
-        uses: github/super-linter@v4
-        env:
-          DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.lGITHUB_TOKEN }}
+      - name: Build Docker Image
+        run: docker build -t myapp:latest .
+
+      - name: Set up QEMU
+        run: docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Log in to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Tag Docker Image
+        run: docker tag myapp:latest ${{ secrets.DOCKER_USERNAME }}/myapp:latest
+
+      - name: Push Docker Image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/myapp:latest
